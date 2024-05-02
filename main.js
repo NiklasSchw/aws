@@ -15,6 +15,7 @@ let map = L.map("map", {
 let themaLayer = {
     stations: L.featureGroup().addTo(map),
     temperature: L.featureGroup().addTo(map),
+    wind: L.featureGroup().addTo(map),
 
 }
 
@@ -29,7 +30,8 @@ L.control.layers({
     "Esri WorldImagery": L.tileLayer.provider("Esri.WorldImagery")
 }, {
     "Wetterstationen": themaLayer.stations,
-    "Temperatur": themaLayer.temperature
+    "Temperatur in °C": themaLayer.temperature,
+    "Wind km/h": themaLayer.wind,
 }).addTo(map);
 
 // Maßstab
@@ -37,23 +39,54 @@ L.control.scale({
     imperial: false,
 }).addTo(map);
 
+function getColor(value, ramp) {
+    console.log("getColor: value: ", value, "ramp", ramp);
+    for (let rule of ramp) {
+        console.log("Rule: ", rule);
+        if (value >= rule.min && value < rule.max) {
+            return rule.color;
+        }
+    }
+}
+let color = getColor(17, COLORS.temperature);
+console.log("Color for 17 deg: ", color);
+
 function showTemperature(geojson) {
     L.geoJSON(geojson, {
         filter: function (feature) {
-            //feature.properties.LT
             if (feature.properties.LT > -50 && feature.properties.LT < 50) {
                 return true;
             }
         },
         pointToLayer: function (feature, latlng) {
+            let color = getColor(feature.properties.LT, COLORS.temperature);
             return L.marker(latlng, {
                 icon: L.divIcon({
                     className: "aws-div-icon",
-                    html: `<span>${feature.properties.LT.toFixed(1)}</span>`
+                    html: `<span style="background-color:${color};">${feature.properties.LT.toFixed(1)}</span>`
                 })
             })
         }
     }).addTo(themaLayer.temperature);
+}
+
+function showWind(geojson) {
+    L.geoJSON(geojson, {
+        filter: function (feature) {
+            if (feature.properties.WG > 0 && feature.properties.WG < 250) {
+                return true;
+            }
+        },
+        pointToLayer: function (feature, latlng) {
+            let color = getColor(feature.properties.WG, COLORS.wind);
+            return L.marker(latlng, {
+                icon: L.divIcon({
+                    className: "aws-div-icon-wind",
+                    html: `<span title="${feature.properties.WG.toFixed(1)} km/h"><i style="transform:rotate(${feature.properties.WR}deg);color:${color}" class ="fa-solid fa-circle-arrow-up"> </i></span>`
+                })
+            })
+        }
+    }).addTo(themaLayer.wind);
 }
 
 // GeoJSON der Wetterstationen laden
@@ -91,7 +124,9 @@ async function showStations(url) {
         ${feature.properties.date}
         `, { className: 'stylePopup' })
         }
-    }).addTo(themaLayer.stations)
-    showTemperature(geojson)
+    }).addTo(themaLayer.stations);
+    showTemperature(geojson);
+    showWind(geojson);
+
 }
 showStations("https://static.avalanche.report/weather_stations/stations.geojson");
