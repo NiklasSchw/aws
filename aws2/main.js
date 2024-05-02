@@ -40,8 +40,6 @@ async function showStations(url) {
     let geojson = await response.json();
 
     // Wetterstationen mit Icons und Popups
-    console.log(geojson)
-
     //PopUps erstellen
     L.geoJSON(geojson, {
         pointToLayer: function (feature, latlng) {
@@ -57,8 +55,8 @@ async function showStations(url) {
 
         //PopUp-Daten einspeisen
         onEachFeature: function (feature, layer) {
-            console.log(feature.properties)
-            console.log(feature.geometry)
+            let pointInTime = new Date(feature.properties.date);
+            console.log(pointInTime);
             layer.bindPopup(`<h4>${feature.properties.name} (${feature.geometry.coordinates[2]}m)</h4>
         <p><ul>
             <li>Lufttemperatur (°C): ${feature.properties.LT || "-"}</li>
@@ -66,6 +64,7 @@ async function showStations(url) {
             <li>Windgeschwindigkeit (km/h): ${feature.properties.WG || "-"}</li>
             <li>Schneehöhe (cm): ${feature.properties.HS || "-"}</li>
         </ul></p>
+        <span>${pointInTime.toLocaleString()}</span>
 
         ${feature.properties.date}
         `, { className: 'stylePopup' })
