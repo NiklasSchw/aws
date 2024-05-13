@@ -114,6 +114,18 @@ function showSnow(geojson) {
     }).addTo(themaLayer.snow);
 }
 
+//Rainviewer
+L.control.rainviewer({
+    position: 'topleft',
+    nextButtonText: '>',
+    playStopButtonText: 'Play/Stop',
+    prevButtonText: '<',
+    positionSliderLabelText: "Hour:",
+    opacitySliderLabelText: "Opacity:",
+    animationInterval: 500,
+    opacity: 0.5
+}).addTo(map);
+
 // GeoJSON der Wetterstationen laden
 async function showStations(url) {
     let response = await fetch(url);
