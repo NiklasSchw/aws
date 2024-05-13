@@ -13,9 +13,10 @@ let map = L.map("map", {
 
 // thematische Layer
 let themaLayer = {
-    stations: L.featureGroup().addTo(map),
-    temperature: L.featureGroup().addTo(map),
-    wind: L.featureGroup().addTo(map),
+    stations: L.featureGroup(),
+    temperature: L.featureGroup(),
+    wind: L.featureGroup(),
+    snow: L.featureGroup().addTo(map),
 
 }
 
@@ -32,6 +33,7 @@ L.control.layers({
     "Wetterstationen": themaLayer.stations,
     "Temperatur in °C": themaLayer.temperature,
     "Wind km/h": themaLayer.wind,
+    "Schneehöhe in cm": themaLayer.snow,
 }).addTo(map);
 
 // Maßstab
@@ -39,6 +41,7 @@ L.control.scale({
     imperial: false,
 }).addTo(map);
 
+//Verbindung zu color.js
 function getColor(value, ramp) {
     console.log("getColor: value: ", value, "ramp", ramp);
     for (let rule of ramp) {
@@ -51,6 +54,7 @@ function getColor(value, ramp) {
 let color = getColor(17, COLORS.temperature);
 console.log("Color for 17 deg: ", color);
 
+//Temperatur
 function showTemperature(geojson) {
     L.geoJSON(geojson, {
         filter: function (feature) {
@@ -70,6 +74,7 @@ function showTemperature(geojson) {
     }).addTo(themaLayer.temperature);
 }
 
+//Wind
 function showWind(geojson) {
     L.geoJSON(geojson, {
         filter: function (feature) {
@@ -87,6 +92,26 @@ function showWind(geojson) {
             })
         }
     }).addTo(themaLayer.wind);
+}
+
+//Schnee
+function showSnow(geojson) {
+    L.geoJSON(geojson, {
+        filter: function (feature) {
+            if (feature.properties.HS > 0 && feature.properties.HS < 1000) {
+                return true;
+            }
+        },
+        pointToLayer: function (feature, latlng) {
+            let color = getColor(feature.properties.HS, COLORS.snow);
+            return L.marker(latlng, {
+                icon: L.divIcon({
+                    className: "aws-div-icon",
+                    html: `<span style="background-color:${color};">${feature.properties.HS.toFixed(1)}</span>`
+                })
+            })
+        }
+    }).addTo(themaLayer.snow);
 }
 
 // GeoJSON der Wetterstationen laden
@@ -127,6 +152,7 @@ async function showStations(url) {
     }).addTo(themaLayer.stations);
     showTemperature(geojson);
     showWind(geojson);
+    showSnow(geojson);
 
 }
 showStations("https://static.avalanche.report/weather_stations/stations.geojson");
